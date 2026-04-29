@@ -6,6 +6,7 @@ import com.subham.journalApp.repository.JournalEntryRepository;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,12 +23,21 @@ public class JournalEntryService {
 
 
     //save ka method
+    @Transactional
         public  void saveEntry(JournalEntry journalEntry, String userName){
-            User user=userService.findByUserName(userName);
-            journalEntry.setDate(LocalDateTime.now());
-            JournalEntry saved = journalEntryRepository.save(journalEntry);
-            user.getJournalEntries().add(saved);//first we saved the journal entries , then added it to the user's personal entries
-            userService.saveEntry(user);//final update to the user's schema
+           try {
+               User user=userService.findByUserName(userName);
+               journalEntry.setDate(LocalDateTime.now());
+               JournalEntry saved = journalEntryRepository.save(journalEntry);
+
+               //here if the code break , it will get saved but in the user it doesnot get updaated
+               user.getJournalEntries().add(saved);//first we saved the journal entries , then added it to the user's personal entries
+               userService.saveEntry(user);//final update to the user's schema
+           }
+           catch (Exception e){
+               System.out.println(e);
+               throw new RuntimeException("Error saving entry");
+           }
         }
 
     public  void saveEntry(JournalEntry journalEntry){
